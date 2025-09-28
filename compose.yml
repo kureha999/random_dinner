@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      args:
+        - PHP_VERSION=${PHP_VERSION}
+    container_name: dinner_app
+    volumes:
+      - ./src:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+    env_file:
+      - .env
+    environment:
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - dinner_network
+
+  web:
+    image: nginx:1.24-alpine
+    container_name: dinner_web
+    ports:
+      - "${APP_PORT}:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/web/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - dinner_network
+
+  db:
+    image: mysql:8.0
+    container_name: dinner_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Tokyo
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - "${DB_EXTERNAL_PORT}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+    networks:
+      - dinner_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dinner_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - dinner_network
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: dinner_mailhog
+    ports:
+      - "8025:8025"
+    networks:
+      - dinner_network
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  dinner_network:
+    driver: bridge
