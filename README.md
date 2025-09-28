@@ -116,10 +116,20 @@ sequenceDiagram
 
 **ファイル構成:**
 ```
-/ (ルートディレクトリ)
-|-- index.php      (メインの処理ファイル)
-|-- config.php     (APIキーなどを記述)
-|-- functions.php  (API通信などの関数を記述)
+.
+├── .env                        # 環境変数設定ファイル
+├── .gitignore                  # Git除外設定
+├── compose.yml                 # Docker Compose設定
+├── README.md                   # プロジェクト説明
+├── docker/                     # Docker関連設定
+│   ├── app/
+│   │   ├── Dockerfile          # PHPアプリケーション用
+│   │   └── php.ini            # PHP設定
+│   ├── db/
+│   │   └── my.cnf             # MySQL設定
+│   └── web/
+│       └── default.conf        # Nginx設定
+└── src/                        # Laravelアプリケーション
 ```
 
 **主要な処理:**
