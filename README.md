@@ -50,3 +50,7 @@ docker compose exec app php artisan migrate
 docker compose exec app php artisan tinker
 # >>> DB::connection()->getPdo();
 ```
+
+***動作確認***
+* アプリケーション: http://localhost:8080
+* MailHog（メール確認）: http://localhost:8025
